@@ -1,0 +1,25 @@
+# Example:
+# We want to sample 1000 times. This samples are unique weights and biases for the model which are used to compute the predictive distribution.
+# 1. Define the log posterior function, which is the negative log posterior, log(posterior) = -log(prior) - log(likelihood)
+# log p(w|y,x) = -log p(y|x,w)p(w) + log p(y|x) = -1/2 log(2πσ²) - (y - Wx - b)² / 2σ² - 1/2 log(2π) - 1/2 log(1) - 1/2 ||w||² - 1/2 ||b||²
+# 2. Compute gradients of the log posterior function.
+# d/dw log p(w|y,x) = -1/σ² * (y - Wx - b) * x + w
+# d/db log p(w|y,x) = -1/σ² * (y - Wx - b) + b
+# 3. Initilisate MAP estimate of the weights and biases.
+# Lets say momentum sampling mass matrix, M = 1
+# Step size, ε = 0.01, number of leapfrog steps, L = 10 for leapfrog integration.
+# 4. Leapfrog integration; for each leapfrog step l = 1, 2, ..., L
+# Half-step momentum update: p^(l-1/2) = p^(l-1) - ε/2 * ∇log p(w^(l-1)|y,x)
+# Full-step position update: w^(l) = w^(l-1) + ε * M^(-1) * p^(l-1/2)
+# Half-step momentum update: p^(l) = p^(l-1/2) - ε/2 * ∇log p(w^(l)|y,x)
+# Example of calculation; say σ = 0.1, x = 2, y = 0.9093, w = 0.5, b = -0.1, p^(0) is N(0,1) then p^(0) = 0.1
+# Gradient = d/dw log p(w|y,x) = -1/σ² * (y - Wx - b) * x + w = -1/0.01 * (0.9093 - 0.5*2 - (-0.1)) * 2 + 0.5 = 0.5
+# Half-step momentum update: p^(0.5) = 0 - 0.01/2 * 0.5 = -0.0025
+# Full-step position update: w^(1) = 0.5 + 0.01 * 1 * -0.0025 = 0.4975
+# Gradient = d/db log p(w|y,x) = -1/σ² * (y - Wx - b) + b = -1/0.01 * (0.9093 - 0.4975*2 - (-0.1)) + (-0.1) = 0.1
+# Half-step momentum update: p^(1) = -0.0025 - 0.01/2 * 0.1 = -0.0025 - 0.0005 = -0.003
+# Repeat the process for L = 10 steps.
+# 5. Compute the Hamiltonian, H = -log p(w|y,x) + 1/2 * p^T * M^(-1) * p
+# 6. Accept or reject the new sample based on the Metropolis-Hastings criterion.
+# if w^(1) = 0.4975 is accepted, then w^(1) is the new sample, if not, w^(0) = 0.5 is the new sample.
+# 7. Repeat steps 4-6 until we have 1000 samples.
